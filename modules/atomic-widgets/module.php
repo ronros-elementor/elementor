@@ -4,6 +4,9 @@ namespace Elementor\Modules\AtomicWidgets;
 
 use Elementor\Core\Base\Module as BaseModule;
 use Elementor\Core\Experiments\Manager as Experiments_Manager;
+use Elementor\Core\Files\CSS\Post;
+use Elementor\Element_Base;
+use Elementor\Modules\AtomicWidgets\Base\Atomic_Widget_Base;
 use Elementor\Modules\AtomicWidgets\Widgets\Atomic_Heading;
 use Elementor\Modules\AtomicWidgets\Widgets\Atomic_Image;
 use Elementor\Plugin;
@@ -23,6 +26,8 @@ class Module extends BaseModule {
 		'editor-style',
 	];
 
+	private Atomic_Styles $atomic_styles;
+
 	public function get_name() {
 		return 'atomic-widgets';
 	}
@@ -34,11 +39,14 @@ class Module extends BaseModule {
 
 		if ( Plugin::$instance->experiments->is_feature_active( self::EXPERIMENT_NAME ) ) {
 			( new Dynamic_Tags() )->register_hooks();
-			( new Widget_Styles() )->register_hooks();
+
+			$this->atomic_styles = new Atomic_Styles();
+			$this->atomic_styles->register_hooks();
 
 			add_filter( 'elementor/editor/v2/packages', fn( $packages ) => $this->add_packages( $packages ) );
 			add_filter( 'elementor/widgets/register', fn( Widgets_Manager $widgets_manager ) => $this->register_widgets( $widgets_manager ) );
 			add_action( 'elementor/editor/after_enqueue_scripts', fn() => $this->enqueue_scripts() );
+			add_action( 'elementor/element/parse_css', fn( Post $post, Element_Base $element ) => $this->parse_element_css( $post, $element ), 10, 2 );
 		}
 	}
 
@@ -75,5 +83,21 @@ class Module extends BaseModule {
 			ELEMENTOR_VERSION,
 			true
 		);
+	}
+
+	private function parse_element_css( Post $post, Element_Base $element ) {
+		if ( ! ( $element instanceof Atomic_Widget_Base ) || Post::class !== get_class( $post ) ) {
+			return;
+		}
+
+		$styles = $element->get_raw_data()['styles'];
+
+		if ( empty( $styles ) ) {
+			return;
+		}
+
+		$css = $this->atomic_styles->convert_styles_to_css( $styles );
+
+		$post->get_stylesheet()->add_raw_css( $css );
 	}
 }

@@ -11,7 +11,7 @@ use Elementor\Modules\AtomicWidgets\Styles\Transformers\Array_Transformer;
 use Elementor\Modules\AtomicWidgets\Styles\Transformers\Size_Transformer;
 use Elementor\Plugin;
 
-class Widget_Styles {
+class Atomic_Styles {
 	/**
 	 * @var array<string, Style_Transformer_Base> $transformers
 	 */
@@ -27,7 +27,6 @@ class Widget_Styles {
 			'elementor/atomic-widgets/styles/transformers',
 			fn ( array $transformers) => $this->register_style_transformers( $transformers )
 		);
-		add_action( 'elementor/element/parse_css', fn( Post $post, Element_Base $element ) => $this->parse_atomic_widget_css( $post, $element ), 10, 2 );
 	}
 
 	/**
@@ -76,26 +75,15 @@ class Widget_Styles {
 		return Plugin::$instance->breakpoints->get_breakpoints_config();
 	}
 
-	private function parse_atomic_widget_css( Post $post, Element_Base $element ) {
+	public function convert_styles_to_css( array $styles ): string {
 		$transformers = $this->get_style_transformers();
 		$breakpoints = $this->get_breakpoints();
-
-		if ( ! ( $element instanceof Atomic_Widget_Base ) || Post::class !== get_class( $post ) ) {
-			return;
-		}
-
-		$styles = $element->get_raw_data()['styles'];
-
-		if ( empty( $styles ) ) {
-			return;
-		}
 
 		$styles_renderer = new Styles_Renderer( [
 			'transformers' => $transformers,
 			'breakpoints' => $breakpoints,
 		] );
-		$css = $styles_renderer->render( $styles );
 
-		$post->get_stylesheet()->add_raw_css( $css );
+		return $styles_renderer->render( $styles );
 	}
 }
