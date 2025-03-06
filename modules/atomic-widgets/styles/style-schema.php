@@ -36,7 +36,7 @@ class Style_Schema {
 
 	private static function get_size_props() {
 		return [
-			'width' => Size_Prop_Type::make(),
+			'width' => Size_Prop_Type::make()->allow_auto(),
 			'height' => Size_Prop_Type::make(),
 			'min-width' => Size_Prop_Type::make(),
 			'min-height' => Size_Prop_Type::make(),

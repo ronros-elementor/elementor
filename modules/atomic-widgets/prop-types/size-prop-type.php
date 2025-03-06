@@ -13,11 +13,20 @@ if ( ! defined( 'ABSPATH' ) ) {
 class Size_Prop_Type extends Plain_Prop_Type {
 	const SUPPORTED_UNITS = [ 'px', 'em', 'rem', '%', 'vh', 'vw', 'vmin', 'vmax' ];
 
+	protected $allow_auto = false;
+
 	public static function get_key(): string {
 		return 'size';
 	}
 
+	public function allow_auto(): self {
+		$this->allow_auto = true;
+
+		return $this;
+	}
+
 	protected function validate_value( $value ): bool {
+		// TODO - validate if auto allowed
 		return (
 			is_array( $value ) &&
 			array_key_exists( 'size', $value ) &&
@@ -28,6 +37,7 @@ class Size_Prop_Type extends Plain_Prop_Type {
 	}
 
 	protected function sanitize_value( $value ) {
+		// TODO - size is redundant if unit === auto
 		return [
 			'size' => (int) $value['size'],
 			'unit' => sanitize_text_field( $value['unit'] ),
