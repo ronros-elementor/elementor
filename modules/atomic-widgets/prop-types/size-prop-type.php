@@ -13,14 +13,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 class Size_Prop_Type extends Plain_Prop_Type {
 	const SUPPORTED_UNITS = [ 'px', 'em', 'rem', '%', 'vh', 'vw', 'vmin', 'vmax' ];
 
-	protected $allow_auto = false;
-
 	public static function get_key(): string {
 		return 'size';
 	}
 
 	public function allow_auto(): self {
-		$this->allow_auto = true;
+		$this->settings['allow_auto'] = true;
 
 		return $this;
 	}
