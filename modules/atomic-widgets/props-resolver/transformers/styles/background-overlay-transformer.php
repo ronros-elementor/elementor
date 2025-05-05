@@ -13,7 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 class Background_Overlay_Transformer extends Transformer_Base {
 	public function transform( $value, Props_Resolver_Context $context ) {
 		return Multi_Props::generate( [
-			'background-image' => $this->get_images( $value ),
+			'background-image' => $this->get_images( $value, Background_Image_Overlay_Transformer::$default_image ),
 			'background-repeat' => $this->get_values_by_prop( $value, 'repeat', Background_Image_Overlay_Transformer::$default_repeat ),
 			'background-attachment' => $this->get_values_by_prop( $value, 'attachment', Background_Image_Overlay_Transformer::$default_attachment ),
 			'background-size' => $this->get_values_by_prop( $value, 'size', Background_Image_Overlay_Transformer::$default_size ),
@@ -21,17 +21,17 @@ class Background_Overlay_Transformer extends Transformer_Base {
 		] );
 	}
 
-	private function get_images( $value ): string {
-		return implode( ',', array_map( function ( $item ) {
+	private function get_images( $value, $default ): string {
+		return implode( ',', array_map( function ( $item ) use ( $default ) {
 			if ( is_string( $item ) ) {
 				return $item;
 			}
 
 			if ( ! Multi_Props::is( $item ) ) {
-				return 'unset';
+				return $default;
 			}
 
-			return Multi_Props::get_value( $item )['url'] ?? 'unset';
+			return Multi_Props::get_value( $item )['url'] ?? $default;
 		}, $value ) );
 	}
 

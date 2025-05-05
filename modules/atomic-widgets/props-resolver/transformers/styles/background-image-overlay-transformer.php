@@ -11,6 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 class Background_Image_Overlay_Transformer extends Transformer_Base {
+	public static $default_image = 'none';
 	public static $default_repeat = 'repeat';
 	public static $default_attachment = 'scroll';
 	public static $default_size = 'auto auto';
