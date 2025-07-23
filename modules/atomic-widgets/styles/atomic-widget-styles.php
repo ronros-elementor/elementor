@@ -7,6 +7,7 @@ use Elementor\Modules\AtomicWidgets\Cache_Validity;
 use Elementor\Modules\AtomicWidgets\Utils;
 use Elementor\Modules\GlobalClasses\Utils\Atomic_Elements_Utils;
 use Elementor\Plugin;
+use const Elementor\Modules\AtomicWidgets\Elements\Component\MOCK_DOCUMENT_ID as MOCK_COMPONENT_DOCUMENT_ID;
 
 class Atomic_Widget_Styles {
 	const STYLES_KEY = 'local';
@@ -59,6 +60,10 @@ class Atomic_Widget_Styles {
 	}
 
 	private function parse_element_style( array $element_data ) {
+		if( isset( $element_data['widgetType'] ) && $element_data['widgetType'] === 'e-component' ) {
+			return $this->parse_post_styles( MOCK_COMPONENT_DOCUMENT_ID );
+		}
+
 		$element_type = Atomic_Elements_Utils::get_element_type( $element_data );
 		$element_instance = Atomic_Elements_Utils::get_element_instance( $element_type );
 
