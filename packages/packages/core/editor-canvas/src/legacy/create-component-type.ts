@@ -1,35 +1,34 @@
-import type { V1ElementConfig } from '@elementor/editor-elements';
-
-import { type DomRenderer } from '../renderers/create-dom-renderer';
-import { createPropsResolver, type PropsResolver } from '../renderers/create-props-resolver';
-import { settingsTransformersRegistry } from '../settings-transformers-registry';
-import { signalizedProcess } from '../utils/signalized-process';
-import { createElementViewClassDeclaration } from './create-element-type';
-import { type ElementType, type ElementView, type LegacyWindow } from './types';
+import { type V1Element, type V1ElementConfig, type V1ElementSettingsProps } from '@elementor/editor-elements';
 import { type Props } from '@elementor/editor-props';
 import type { StyleDefinition, StyleDefinitionID } from '@elementor/editor-styles';
+
+import { type DomRenderer } from '../renderers/create-dom-renderer';
+import { createPropsResolver } from '../renderers/create-props-resolver';
+import { settingsTransformersRegistry } from '../settings-transformers-registry';
+import { createElementViewClassDeclaration } from './create-element-type';
+import { type ElementType, type ElementView, type LegacyWindow } from './types';
 
 type CreateTypeOptions = {
 	type: string;
 	renderer: DomRenderer;
 	element: Component;
-    config: Record<string, V1ElementConfig>
+	config: Record< string, V1ElementConfig >;
 };
 
 type Widget = {
-    id: string;
-    elType: string;
-    widgetType: string;
-    settings: Props;
-    styles?: Record<StyleDefinitionID, StyleDefinition>;
-    elements: Widget[];
-}
+	id: string;
+	elType: string;
+	widgetType: string;
+	settings: Props;
+	styles?: Record< StyleDefinitionID, StyleDefinition >;
+	elements: Widget[];
+};
 
 export type Component = {
-    elements_data: Widget[];
-}
+	elements_data: Widget[];
+};
 
-export function createComponentType( { type, renderer, element, config}: CreateTypeOptions ): typeof ElementType {
+export function createComponentType( { type, renderer, element, config }: CreateTypeOptions ): typeof ElementType {
 	const legacyWindow = window as unknown as LegacyWindow;
 
 	return class extends legacyWindow.elementor.modules.elements.types.Widget {
@@ -41,8 +40,8 @@ export function createComponentType( { type, renderer, element, config}: CreateT
 			return createComponentViewClassDeclaration( {
 				type,
 				renderer,
-                elements_data: element.elements_data,
-                config,
+				elements_data: element.elements_data,
+				config,
 			} );
 		}
 	};
@@ -51,14 +50,14 @@ export function createComponentType( { type, renderer, element, config}: CreateT
 type CreateViewOptions = {
 	type: string;
 	renderer: DomRenderer;
-    elements_data: Widget[];
-    config: Record<string, V1ElementConfig>
+	elements_data: Widget[];
+	config: Record< string, V1ElementConfig >;
 };
 
 function createComponentViewClassDeclaration( {
-    elements_data,
+	elements_data,
 	renderer,
-    config,
+	config,
 }: CreateViewOptions ): typeof ElementView {
 	const BaseView = createElementViewClassDeclaration();
 
@@ -77,101 +76,103 @@ function createComponentViewClassDeclaration( {
 		async _renderTemplate() {
 			this.#beforeRenderTemplate();
 
-            const componentSettings = this.model.get( 'settings' ).toJSON();
+			const componentSettings = this.model.get( 'settings' ).toJSON();
 
-			const renderedElements = await this.renderContainer( elements_data[0], componentSettings );
+			const renderedElements = await this.renderContainer( elements_data[ 0 ], componentSettings );
 			this.$el.html( '<div class="e-component">' + renderedElements + '</div>' );
 
 			this.#afterRenderTemplate();
 		}
 
-		async renderContainer( containerElement: any, componentSettings: any ) {
+		async renderContainer( containerElement: V1Element, componentSettings: V1ElementSettingsProps ) {
+			let renderedElements = '';
 
-            let renderedElements = '';
+			if ( containerElement.elements.length ) {
+				renderedElements = (
+					await Promise.all(
+						containerElement.elements.map( async ( nestedElement: any ) => {
+							switch ( nestedElement.elType ) {
+								case 'e-div-block':
+								case 'e-flexbox':
+								case 'container':
+									return this.renderContainer( nestedElement, componentSettings );
+								case 'widget':
+									return this.renderWidget( nestedElement, componentSettings );
+								default:
+									return '';
+							}
+						} )
+					)
+				).join( '' );
+			}
 
-            if ( containerElement.elements.length ) {
-                renderedElements = (await Promise.all( containerElement.elements.map( async ( nestedElement: any ) => {
-                        switch (nestedElement.elType) {
-                        case 'e-div-block':
-                        case 'e-flexbox':
-                        case 'container':
-                            return this.renderContainer( nestedElement, componentSettings );
-                        case 'widget':
-                            return this.renderWidget( nestedElement, componentSettings );
-                        default:
-                            return '';
-                    }
-                } ) )).join('');            
-            }
-            
-            let classes = 'elementor-element elementor-element-edit-mode e-con ';
-            if (containerElement.elType === 'e-div-block' || containerElement.elType === 'e-flexbox') {
-                classes += containerElement.settings.classes?.value?.join(' ');
-                if (containerElement.elType === 'e-flexbox') {
-                    classes += ' e-flexbox-base';
-                } else {
-                    classes += ' e-div-block-base';
-                }
-            } else if (containerElement.elType === 'container') {
-                classes += containerElement.settings.classes?.value?.join(' ');
-            }
-            
-            return `<div class="${classes}">${renderedElements}</div>`;
-        }
+			let classes = 'elementor-element elementor-element-edit-mode e-con ';
+			if ( containerElement.elType === 'e-div-block' || containerElement.elType === 'e-flexbox' ) {
+				classes += containerElement.settings.classes?.value?.join( ' ' );
+				if ( containerElement.elType === 'e-flexbox' ) {
+					classes += ' e-flexbox-base';
+				} else {
+					classes += ' e-div-block-base';
+				}
+			} else if ( containerElement.elType === 'container' ) {
+				classes += containerElement.settings.classes?.value?.join( ' ' );
+			}
 
-		async renderWidget( widget: any, componentSettings: any ) {
-            const widgetConfig = config[ widget.widgetType ];
+			return `<div class="${ classes }">${ renderedElements }</div>`;
+		}
 
-            if ( !widgetConfig || !widgetConfig.atomic_props_schema ) {
-                console.log( 'no config', widget.widgetType );
-                return '';
-            }
+		async renderWidget( widget: Widget, componentSettings: V1ElementSettingsProps ) {
+			const widgetConfig = config[ widget.widgetType ];
 
-            const widgetProps = { ...widget.settings };
+			if ( ! widgetConfig || ! widgetConfig.atomic_props_schema ) {
+				console.log( 'no config', widget.widgetType );
+				return '';
+			}
 
-            // Overrides - hardcoded check for POC
-            const image_id = "414a53c";
-            const name_id = "87d3ef6";
-            const title_id = "c8cb872";
-            
-            if (widget.id === name_id && componentSettings.name) {
-                widgetProps.title = componentSettings.name;
-            }
-            if (widget.id === image_id && componentSettings['profile-image']) {
-                widgetProps.image = componentSettings['profile-image'];
-            }
-            if (widget.id === title_id && componentSettings.title) {
-                widgetProps.title = componentSettings.title;
-            }
-            // End of overrides
+			const widgetProps = { ...widget.settings };
 
-            console.log( widget.widgetType, widgetProps );
-            const propsResolver = createPropsResolver( {
-                transformers: settingsTransformersRegistry,
-                schema: widgetConfig.atomic_props_schema,
-            } );
+			// Overrides - hardcoded check for POC
+			const image_id = '625add2';
+			const name_id = '3f16ed7';
+			const title_id = '6b6048a';
 
-            const resolvedSettings = await propsResolver( {
-                props: widgetProps,
-                
-            } );
+			if ( widget.id === name_id && componentSettings.name ) {
+				widgetProps.title = componentSettings.name;
+			}
+			if ( widget.id === image_id && componentSettings[ 'profile-image' ] ) {
+				widgetProps.image = componentSettings[ 'profile-image' ];
+			}
+			if ( widget.id === title_id && componentSettings.title ) {
+				widgetProps.title = componentSettings.title;
+			}
+			// End of overrides
 
-            // Same as the Backend.
-            const twigContext = {
-                id: widget.id,
-                type: widget.widgetType,
-                settings: resolvedSettings,
-                base_styles: widgetConfig.base_styles_dictionary,
-            };
+			console.log( widget.widgetType, widgetProps );
+			const propsResolver = createPropsResolver( {
+				transformers: settingsTransformersRegistry,
+				schema: widgetConfig.atomic_props_schema,
+			} );
 
-            console.log( twigContext );
+			const resolvedSettings = await propsResolver( {
+				props: widgetProps,
+			} );
 
-            const templateKey = widgetConfig.twig_main_template!;
-            const html = await renderer.render( templateKey, twigContext );
+			// Same as the Backend.
+			const twigContext = {
+				id: widget.id,
+				type: widget.widgetType,
+				settings: resolvedSettings,
+				base_styles: widgetConfig.base_styles_dictionary,
+			};
 
-            console.log( widget.widgetType, html );
-            return html;
-        }
+			console.log( twigContext );
+
+			const templateKey = widgetConfig.twig_main_template;
+			const html = await renderer.render( templateKey, twigContext );
+
+			console.log( widget.widgetType, html );
+			return html;
+		}
 
 		// Emulating the original Marionette behavior.
 		#beforeRenderTemplate() {
