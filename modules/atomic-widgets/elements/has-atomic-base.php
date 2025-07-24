@@ -165,7 +165,7 @@ trait Has_Atomic_Base {
 		return [];
 	}
 
-	final public function get_data_for_save() {
+	public function get_data_for_save() {
 		$data = parent::get_data_for_save();
 
 		$data['version'] = $this->version;
@@ -202,23 +202,23 @@ trait Has_Atomic_Base {
 
 		// Apply overrides if they exist
 		if ( $overrides ) {
-			$props = $this->apply_overrides_to_props( $props, $overrides );
+			$props = array_merge( $props, $overrides );
 		}
 
 		return Render_Props_Resolver::for_settings()->resolve( $schema, $props );
 	}
 
-	private function apply_overrides_to_props( array $props, array $overrides ): array {
-		foreach ( $overrides as $prop_name => $override_data ) {
-			if ( ! isset( $override_data) ) {
-				continue;
-			}
-
-			$props[ $prop_name ] = $override_data;
-		}
-
-		return $props;
-	}
+//	private function apply_overrides_to_props( array $props, array $overrides ): array {
+//		foreach ( $overrides as $prop_name => $override_data ) {
+//			if ( ! isset( $override_data) ) {
+//				continue;
+//			}
+//
+//			$props[ $prop_name ] = $override_data;
+//		}
+//
+//		return $props;
+//	}
 
 	private function parse_editor_settings( array $data ): array {
 		$editor_data = [];

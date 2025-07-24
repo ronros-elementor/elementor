@@ -1,10 +1,8 @@
 <?php
 namespace Elementor\Modules\AtomicWidgets\Elements\Component;
 
-use Elementor\Core\Documents_Manager;
 use Elementor\Modules\AtomicWidgets\Controls\Section;
 use Elementor\Modules\AtomicWidgets\Elements\Atomic_Widget_Base;
-use Elementor\Modules\AtomicWidgets\PropTypes\Base\Object_Prop_Type;
 use Elementor\Modules\AtomicWidgets\PropTypes\Classes_Prop_Type;
 use Elementor\Modules\AtomicWidgets\PropTypes\Generic_Object_Prop_Type;
 use Elementor\Modules\AtomicWidgets\PropTypes\Primitives\String_Prop_Type;
@@ -70,7 +68,7 @@ class Component extends Atomic_Widget_Base {
 
     protected static function define_props_schema(): array {
         return [
-            'postId' => String_Prop_Type::make()
+            'post_id' => String_Prop_Type::make()
                 ->default( MOCK_DOCUMENT_ID ),
             'classes' => Classes_Prop_Type::make()
                 ->default( [] ),
@@ -170,5 +168,18 @@ class Component extends Atomic_Widget_Base {
         }
 
         Plugin::$instance->documents->switch_to_document( $document );
+    }
+
+    public function get_data_for_save() {
+        $data = parent::get_data_for_save();
+
+        if( ! isset( $data['settings']['post_id'] ) ) {
+            $data['settings']['post_id'] = [
+                '$$type' => 'string',
+                'value' => MOCK_DOCUMENT_ID
+            ];
+        }
+
+        return $data;
     }
 }
