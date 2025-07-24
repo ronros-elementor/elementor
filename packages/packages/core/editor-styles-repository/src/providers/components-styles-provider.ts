@@ -35,7 +35,9 @@ export const componentsStylesProvider = createStylesProvider( {
 			return elements.flatMap( getComponentStyles );
 		},
 
-		get: ( id, meta = {} ) => {},
+		get: () => {
+			return null;
+		},
 	},
 } );
 
@@ -43,7 +45,7 @@ function isComponent( element: V1Element ): boolean {
 	return element.model.get( 'widgetType' ) === 'e-component';
 }
 
-function getComponentStyles( _: V1ElementModelProps ): StyleDefinition[] {
+function getComponentStyles(): StyleDefinition[] {
 	const { elements_data: elementsData = [] } = getWidgetsCache()?.[ 'e-component' ] ?? {};
 
 	const iterate = ( el: V1ElementModelProps ): StyleDefinition[] => {
